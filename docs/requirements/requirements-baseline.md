@@ -1,7 +1,9 @@
 # Requirements Baseline — Agentic SDLC URL Shortener
 
-**Status:** DRAFT v2 — awaiting Human Gate 1 (Requirement Approval)
-**Revision reason:** v1 only captured the URL-shortener *application* requirements. v2 adds explicit, traceable requirements for the agentic orchestration, governance, traceability, metrics, replanning, and submission-deliverable expectations from the original assessment — see §0 traceability matrix.
+**Status:** DRAFT v3 — awaiting Human Gate 1 (Requirement Approval)
+**Revision history:**
+- v1 → v2: added explicit, traceable requirements for the agentic orchestration, governance, traceability, metrics, replanning, and submission-deliverable expectations (v1 only had the application-level requirements).
+- v2 → v3: reviewer asked for a second, line-by-line verification against the original 12-item list. Found and fixed two real gaps: (1) the brownfield scenario only demonstrated "enhancement," not the "enhancements, refactoring, or bug fixes" the original item names — SCEN-02 rewritten to include all three; (2) "reliability features" (item 5) had no dedicated requirement beyond error-response formatting — added NFR-09 for concurrency-safe analytics counters and a real DB health check.
 **Scope of this baseline:** application (greenfield) + orchestration/governance system (all scenarios)
 
 **Normalized source requirement:**
@@ -16,8 +18,8 @@
 | 1 | Working URL shortener service from scratch | FR-01…FR-08 |
 | 2 | Agentic execution model turning requirements into reviewable outputs | ORCH-01 |
 | 3 | Requirement understanding, ambiguity identification, task decomposition, multi-step execution, output generation & validation | ORCH-02, ORCH-03, ORCH-04, ORCH-05 |
-| 4 | Cover greenfield + brownfield | SCEN-01, SCEN-02 |
-| 5 | Core APIs, analytics, reliability, unit/integration tests, documentation | FR-01…08, NFR-04, NFR-05, NFR-07, SUBMIT-02…07 |
+| 4 | Cover greenfield + brownfield (enhancements, refactoring, **or** bug fixes) | SCEN-01, SCEN-02 (revised to include a refactor + a bug-fix element, not enhancement only — see A08) |
+| 5 | Core APIs, analytics, reliability, unit/integration tests, documentation | FR-01…08, NFR-04, NFR-05, **NFR-09**, NFR-07, SUBMIT-02…07, OpenAPI/Swagger (§4 Scope) |
 | 6 | Orchestration layer: stateful, non-linear, explicit dependency graph, sequential+parallel, synchronization | ORCH-06, ORCH-07, ORCH-08, ORCH-09 |
 | 7 | Governance: approval checkpoints, bounded retries, fallback, rollback, safe stop, security/compliance guardrails, change-control | GOV-01…GOV-07 |
 | 8 | Preserve cross-stage context, decision history, traceability, audit evidence | TRACE-01…TRACE-04 |
@@ -139,7 +141,7 @@ Explicitly deferred, per binding assumption §3.19 and the "do not overengineer"
 | ID | Requirement |
 |---|---|
 | SCEN-01 | **Greenfield** — full workflow graph executed end to end for the initial build; tagged `v1.0.0-greenfield`. |
-| SCEN-02 | **Brownfield** — enhance the greenfield baseline (configurable expiry range, link disabling) without breaking existing links or API contracts; demonstrate impact analysis, migration, backward compatibility, regression tests, and rollback capability; tagged `v1.1.0-brownfield`. |
+| SCEN-02 | **Brownfield** — enhance the greenfield baseline without breaking existing links or API contracts, demonstrating all three change types named in the original assessment: (a) **enhancement** — configurable expiry range (1–365 days, replacing the fixed 30-day default) and link disabling; (b) **refactoring** — extract status/expiry-transition logic out of the request handler into a dedicated, independently-testable domain function as part of making it configurable; (c) **bug fix** — regression testing against the greenfield baseline is expected to surface at least one real defect (e.g. an edge case in expiry-boundary comparison or status-transition validation), which is then fixed under change control with a regression test added. Demonstrate impact analysis, migration, backward compatibility, full regression suite, and rollback capability; tagged `v1.1.0-brownfield`. |
 | SCEN-03 | **Ambiguous** — submit "make shortened links more secure"; Requirement Analysis Agent enumerates ≥5 candidate interpretations (stronger short codes, malicious-URL blocking, SSRF controls, expiry, auth, rate limiting, ownership, abuse reporting); workflow pauses at Gate 1 for real clarification/approval before any implementation; approved interpretation is implemented selectively. |
 
 ## 12. Non-Functional Requirements — Application
@@ -154,6 +156,7 @@ Explicitly deferred, per binding assumption §3.19 and the "do not overengineer"
 | NFR-06 | **Portability:** Runs fully via `docker compose up --build`, no external network dependency, no required API key. |
 | NFR-07 | **Testability:** Automated unit/integration/negative tests for every FR above; target ≥80% coverage as a signal, not a sole quality gate. |
 | NFR-08 | **Auditability:** Every material engineering decision is logged with input/output artifacts, decision, and reason. |
+| NFR-09 | **Reliability:** Click-count increments and last-accessed updates on `short_urls` SHALL be atomic/consistent under concurrent redirect requests (DB-level atomic update or transaction) — concurrent hits on the same short code SHALL NOT lose updates. The `/health` endpoint's database check SHALL reflect real connectivity, not a hardcoded "ok". |
 
 ## 13. Submission / Deliverable Requirements
 
@@ -188,6 +191,7 @@ Explicitly deferred, per binding assumption §3.19 and the "do not overengineer"
 - A05 — "Version" in the data model/health endpoint means application/release version, distinct from the per-record optimistic-concurrency `version` field on `short_urls`.
 - A06 — "Reviewable engineering outputs" (item 2) means each stage's artifact is a real file under version control (requirements doc, ADRs, code diffs, test reports), not a chat transcript.
 - A07 — The three human approval gates are approved by the actual person reviewing this session in chat — not a simulated or auto-approved persona — in normal execution mode.
+- A08 — Item 4's "enhancements, refactoring, or bug fixes" is read as: the single brownfield scenario should exhibit all three change types (not three separate scenarios), since the master brief names only one brownfield scenario (expiry + disabling). SCEN-02 is written accordingly.
 
 ## 17. Risks
 
@@ -200,7 +204,8 @@ Explicitly deferred, per binding assumption §3.19 and the "do not overengineer"
 
 ## 18. Acceptance Criteria
 
-- All FR-01–FR-08 and NFR-01–NFR-08 implemented and covered by automated tests.
+- All FR-01–FR-08 and NFR-01–NFR-09 implemented and covered by automated tests.
+- SCEN-02 demonstrably contains a refactor and a fixed regression bug, not only a feature enhancement.
 - All ORCH-01–ORCH-10 and GOV-01–GOV-07 demonstrated in running code (not documentation-only) and covered by orchestration tests.
 - All TRACE-01–TRACE-04 and METRIC-01 implemented and inspectable (persisted events, generated metrics report).
 - All three scenarios (SCEN-01/02/03) executed with retained evidence under `artifacts/sample-runs/`.
