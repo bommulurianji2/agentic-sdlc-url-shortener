@@ -8,10 +8,7 @@ from alembic import context
 from app.config import get_settings
 from app.database import Base
 from app.models import ClickEvent, ShortUrl  # noqa: F401 - registers tables on Base.metadata
-
-# NOTE: orchestration models (WorkflowRun, WorkflowEvent, Artifact, Approval) are added
-# to this import list in build-plan task 9, when agentic/models.py is created - same
-# metadata/migration chain per ADR-003, added when that module exists.
+from agentic.models import Approval, Artifact, WorkflowEvent, WorkflowRun  # noqa: F401,E402
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
