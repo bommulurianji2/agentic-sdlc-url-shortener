@@ -31,3 +31,16 @@ class Agent(Protocol):
     def execute(self, context: WorkflowContext) -> AgentResult: ...
 
     def validate(self, result: AgentResult) -> ValidationResult: ...
+
+
+def default_validate(result: AgentResult) -> ValidationResult:
+    """Uniform post-check shared by every agent (ORCH-05). Domain-specific
+    checks (requirement-ID coverage, architecture denylist, skipped-test
+    policy) run as self-checks inside each agent's own execute(), since they
+    need the agent's own working data, not just the returned AgentResult."""
+    violations: list[str] = []
+    if result.status == "success" and not result.output_artifacts:
+        violations.append("a successful result must produce at least one output artifact")
+    if result.status == "failure" and not result.error:
+        violations.append("a failure result must include an error message")
+    return ValidationResult(valid=not violations, violations=violations)

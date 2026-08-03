@@ -10,7 +10,9 @@ from fastapi.testclient import TestClient
 _db_fd, _db_path = tempfile.mkstemp(suffix=".db")
 os.environ["DATABASE_URL"] = f"sqlite:///{_db_path}"
 
+import agentic.models  # noqa: E402,F401 - registers orchestration tables on Base.metadata
 from app.database import Base  # noqa: E402
+from app.database.session import SessionLocal  # noqa: E402
 from app.database.session import engine as app_engine  # noqa: E402
 from app.main import app  # noqa: E402
 
@@ -25,3 +27,12 @@ def _fresh_schema() -> Generator[None, None, None]:
 @pytest.fixture
 def client() -> TestClient:
     return TestClient(app)
+
+
+@pytest.fixture
+def db_session():
+    session = SessionLocal()
+    try:
+        yield session
+    finally:
+        session.close()
