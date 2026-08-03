@@ -1,6 +1,6 @@
 """Common agent contract - docs/architecture/ai-dlc-design.md #2."""
 
-from typing import Literal, Protocol
+from typing import Literal, Protocol, runtime_checkable
 
 from pydantic import BaseModel, Field
 
@@ -23,10 +23,9 @@ class ValidationResult(BaseModel):
     violations: list[str] = Field(default_factory=list)
 
 
+@runtime_checkable
 class Agent(Protocol):
     name: str
-    allowed_tools: list[str]
-    prohibited_actions: list[str]
 
     def execute(self, context: WorkflowContext) -> AgentResult: ...
 
