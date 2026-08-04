@@ -109,3 +109,54 @@ def test_checksum_verification_detects_tampering(db_session, tmp_path):
 
     Path(artifact.content_path).write_text("tampered", encoding="utf-8")
     assert artifact_store.verify_checksum(artifact) is False
+
+
+def test_mark_stale_updates_the_latest_version(db_session):
+    _make_run(db_session)
+    artifact_store.save_artifact(
+        db_session,
+        workflow_id="wf-1",
+        artifact_type="development",
+        content={"a": 1},
+        created_by="development",
+    )
+    artifact_store.mark_stale(db_session, "wf-1", "development")
+
+    latest = artifact_store.save_artifact(
+        db_session,
+        workflow_id="wf-1",
+        artifact_type="development",
+        content={"a": 1},
+        created_by="development",
+    )
+    assert latest.status == "stale"
+
+
+def test_mark_stale_on_nonexistent_artifact_is_a_noop(db_session):
+    _make_run(db_session)
+    artifact_store.mark_stale(db_session, "wf-1", "release")  # nothing to mark - must not raise
+
+
+def test_load_context_artifacts_reconstructs_typed_content(db_session):
+    from agentic.schemas import RequirementAnalysisOutput
+
+    _make_run(db_session)
+    artifact_store.save_artifact(
+        db_session,
+        workflow_id="wf-1",
+        artifact_type="requirement",
+        content=RequirementAnalysisOutput(
+            normalized_requirement="test", functional_requirements=["FR-01"]
+        ),
+        created_by="requirement_analysis",
+    )
+
+    loaded = artifact_store.load_context_artifacts(db_session, "wf-1")
+
+    assert isinstance(loaded["requirement"], RequirementAnalysisOutput)
+    assert loaded["requirement"].functional_requirements == ["FR-01"]
+
+
+def test_load_context_artifacts_on_a_fresh_workflow_is_empty(db_session):
+    _make_run(db_session, workflow_id="wf-empty")
+    assert artifact_store.load_context_artifacts(db_session, "wf-empty") == {}
