@@ -1,6 +1,7 @@
 """Development Agent - hybrid model (ADR-012). docs/architecture/ai-dlc-design.md #4.4."""
 
 import subprocess
+import sys
 from typing import ClassVar
 
 from agentic.agents.base import AgentResult, ValidationResult, default_validate
@@ -72,7 +73,7 @@ class DevelopmentAgent:
     def _self_review(self, paths: list[str]) -> str:
         try:
             result = subprocess.run(
-                ["ruff", "check", *paths],
+                [sys.executable, "-m", "ruff", "check", *paths],
                 capture_output=True,
                 text=True,
                 timeout=30,

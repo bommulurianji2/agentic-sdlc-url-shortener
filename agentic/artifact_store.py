@@ -11,9 +11,33 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from agentic.models import Artifact
+from agentic.schemas import (
+    ArchitectureOutput,
+    DevelopmentOutput,
+    PlanOutput,
+    ReleaseOutput,
+    RequirementAnalysisOutput,
+    SecurityReviewOutput,
+    TestOutput,
+)
 from app.time_utils import utc_now
 
 ARTIFACT_ROOT = Path("artifacts/runtime")
+
+# Which Pydantic model each artifact_type deserializes into - needed to
+# reconstruct WorkflowContext.artifacts when resuming a workflow in a new
+# process (ADR-009: a scenario script exits at a gate and a later invocation
+# must pick the run back up exactly where it left off, not just re-read the
+# database row - the in-memory artifact *content* has to come back too).
+ARTIFACT_TYPE_SCHEMAS: dict[str, type] = {
+    "requirement": RequirementAnalysisOutput,
+    "plan": PlanOutput,
+    "architecture": ArchitectureOutput,
+    "development": DevelopmentOutput,
+    "test": TestOutput,
+    "security_review": SecurityReviewOutput,
+    "release": ReleaseOutput,
+}
 
 
 def _checksum(content: str) -> str:
@@ -99,3 +123,19 @@ def mark_stale(db: Session, workflow_id: str, artifact_type: str) -> None:
 def verify_checksum(artifact: Artifact) -> bool:
     content = Path(artifact.content_path).read_text(encoding="utf-8")
     return _checksum(content) == artifact.checksum
+
+
+def load_context_artifacts(db: Session, workflow_id: str) -> dict[str, Any]:
+    """Reconstructs WorkflowContext.artifacts from persisted artifact content -
+    used when a scenario script resumes a workflow in a fresh process."""
+    loaded: dict[str, Any] = {}
+    for artifact_type, schema_cls in ARTIFACT_TYPE_SCHEMAS.items():
+        latest = db.scalar(
+            select(Artifact)
+            .where(Artifact.workflow_id == workflow_id, Artifact.artifact_type == artifact_type)
+            .order_by(Artifact.version.desc())
+        )
+        if latest is not None:
+            raw = json.loads(Path(latest.content_path).read_text(encoding="utf-8"))
+            loaded[artifact_type] = schema_cls(**raw)
+    return loaded

@@ -19,7 +19,7 @@ def _subprocess_stub(passed: int = 10, failed: int = 0):
 
     def _run(cmd, **kwargs):
         result = MagicMock()
-        if cmd and cmd[0] == "pytest":
+        if cmd and "pytest" in cmd:
             result.stdout = (
                 f"{passed} passed" + (f", {failed} failed" if failed else "") + " in 0.1s"
             )

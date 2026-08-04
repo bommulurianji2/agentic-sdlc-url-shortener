@@ -2,6 +2,7 @@
 docs/architecture/ai-dlc-design.md #4.6."""
 
 import subprocess
+import sys
 from typing import ClassVar
 
 from agentic.agents.base import AgentResult, ValidationResult, default_validate
@@ -34,7 +35,7 @@ class SecurityReviewAgent:
                 )
             )
 
-        if self._run(["ruff", "check", "app", "agentic"]) != 0:
+        if self._run([sys.executable, "-m", "ruff", "check", "app", "agentic"]) != 0:
             findings.append(SecurityFinding(severity="medium", description="ruff findings present"))
 
         critical = [f for f in findings if f.severity == "critical"]

@@ -9,6 +9,7 @@ generative/deterministic-rule ambiguity here at all."""
 
 import re
 import subprocess
+import sys
 from typing import ClassVar
 
 from agentic.agents.base import AgentResult, ValidationResult, default_validate
@@ -63,7 +64,7 @@ class TestAgent:
             )
 
         result = subprocess.run(
-            ["pytest", "tests/", "--tb=no", "-q"],
+            [sys.executable, "-m", "pytest", "tests/", "--tb=no", "-q"],
             capture_output=True,
             text=True,
             timeout=120,
