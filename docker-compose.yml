@@ -1,0 +1,17 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - app_data:/data
+    environment:
+      DATABASE_URL: sqlite:////data/app.db
+      AGENT_MODE: deterministic
+      LOG_LEVEL: INFO
+      SHORT_CODE_LENGTH: "7"
+      DEFAULT_EXPIRY_DAYS: "30"
+      RATE_LIMIT_PER_MINUTE: "100"
+
+volumes:
+  app_data:
