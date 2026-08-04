@@ -22,11 +22,11 @@ class RequirementAnalysisAgent:
 
     def execute(self, context: WorkflowContext) -> AgentResult:
         if context.scenario_type == "ambiguous":
-            output = self._analyze_ambiguous(context.raw_requirement)
+            output = self.analyze_ambiguous(context.raw_requirement)
         elif context.scenario_type == "brownfield":
-            output = self._analyze_brownfield(context.raw_requirement)
+            output = self.analyze_brownfield(context.raw_requirement)
         else:
-            output = self._analyze_greenfield(context.raw_requirement)
+            output = self.analyze_greenfield(context.raw_requirement)
 
         context.artifacts["requirement"] = output
 
@@ -43,7 +43,10 @@ class RequirementAnalysisAgent:
     def validate(self, result: AgentResult) -> ValidationResult:
         return default_validate(result)
 
-    def _analyze_greenfield(self, raw: str) -> RequirementAnalysisOutput:
+    def analyze_greenfield(self, raw: str) -> RequirementAnalysisOutput:
+        """Public: reused directly by scripts/run_brownfield.py to reconstruct
+        the greenfield baseline for the ORCH-10 replanning demonstration,
+        without depending on a prior live workflow run having been executed."""
         return RequirementAnalysisOutput(
             normalized_requirement=(
                 "Build a URL-shortener service that creates short URLs, redirects "
@@ -88,7 +91,7 @@ class RequirementAnalysisAgent:
             risks=["SSRF allowlist/denylist logic is easy to get subtly wrong"],
         )
 
-    def _analyze_brownfield(self, raw: str) -> RequirementAnalysisOutput:
+    def analyze_brownfield(self, raw: str) -> RequirementAnalysisOutput:
         return RequirementAnalysisOutput(
             normalized_requirement=(
                 "Enhance the existing URL shortener to support configurable "
@@ -114,7 +117,7 @@ class RequirementAnalysisAgent:
             risks=["A non-additive migration could break existing links"],
         )
 
-    def _analyze_ambiguous(self, raw: str) -> RequirementAnalysisOutput:
+    def analyze_ambiguous(self, raw: str) -> RequirementAnalysisOutput:
         return RequirementAnalysisOutput(
             normalized_requirement=raw,
             functional_requirements=[],
