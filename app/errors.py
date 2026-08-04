@@ -1,6 +1,23 @@
 from typing import Any
 
 
+def error_envelope(code: str, message: str, correlation_id: str, details: Any = None) -> dict:
+    """Shared shape - used both by main.py's exception handlers and by any
+    middleware that must build the response directly (exceptions raised
+    inside a BaseHTTPMiddleware.dispatch() do NOT reach FastAPI's registered
+    @app.exception_handler(AppError) - a Starlette middleware limitation, not
+    a bug in the handler itself - so rate_limit.py returns a JSONResponse
+    with this envelope directly rather than raising AppError)."""
+    return {
+        "error": {
+            "code": code,
+            "message": message,
+            "correlation_id": correlation_id,
+            "details": details,
+        }
+    }
+
+
 class AppError(Exception):
     """Structured application error - always rendered via the single error envelope
     in docs/architecture/detailed-technical-design.md #3, never a raw stack trace."""

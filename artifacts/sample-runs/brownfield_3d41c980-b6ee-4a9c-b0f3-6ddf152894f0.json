@@ -1,0 +1,10 @@
+{
+  "workflow_id": "3d41c980-b6ee-4a9c-b0f3-6ddf152894f0",
+  "scenario_type": "brownfield",
+  "status": "COMPLETED",
+  "current_stage": "COMPLETE",
+  "retry_count": 0,
+  "rollback_count": 0,
+  "failure_count": 0,
+  "revision": 1
+}

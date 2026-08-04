@@ -1,0 +1,10 @@
+{
+  "workflow_id": "adf582a0-c941-40bd-aa08-5396071e8d99",
+  "scenario_type": "ambiguous",
+  "status": "COMPLETED",
+  "current_stage": "COMPLETE",
+  "retry_count": 0,
+  "rollback_count": 0,
+  "failure_count": 0,
+  "revision": 1
+}

@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     short_code_length: int = 7
     default_expiry_days: int = 30
+    rate_limit_per_minute: int = 100
+    """SCEN-03 (ambiguous scenario): the one net-new control added beyond the
+    greenfield baseline. 100/min/IP is generous enough for normal use and the
+    test suite, while still bounding abuse of the creation endpoint."""
     app_version: str = _app_version()
 
 

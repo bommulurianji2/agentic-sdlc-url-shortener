@@ -1,0 +1,10 @@
+{
+  "workflow_id": "f8338424-fdf1-4f39-8a16-916e9b1b4b6c",
+  "scenario_type": "greenfield",
+  "status": "COMPLETED",
+  "current_stage": "COMPLETE",
+  "retry_count": 0,
+  "rollback_count": 0,
+  "failure_count": 0,
+  "revision": 1
+}
