@@ -6,3 +6,4 @@ Records every human gate decision for this project. This is the pre-code, bootst
 |---|---|---|---|---|---|---|
 | meta-build (this repo's own construction) | requirements | reviewer (chat session) | approved | requirements-baseline.md v3 | approved implicitly by directing the session to continue past two rounds of gap-finding review | 2026-08-03 |
 | meta-build (this repo's own construction) | architecture | reviewer (chat session) | approved | architecture-overview.md, ai-dlc-design.md, detailed-technical-design.md, build-plan.md, ADR-001…012 (all v1) | explicit "approved" | 2026-08-03 |
+| meta-build (this repo's own construction) | release | reviewer (chat session) | approved | docs/release-readiness.md v1, all Phase 1-9 deliverables | explicit "approved. GO" | 2026-08-04 |
