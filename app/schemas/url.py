@@ -8,6 +8,9 @@ class CreateUrlRequest(BaseModel):
     original_url: str = Field(min_length=1, max_length=2048)
     custom_alias: str | None = Field(default=None, min_length=3, max_length=32)
     expires_at: datetime | None = None
+    expires_in_days: int | None = None
+    """Brownfield addition (SCEN-02): configurable expiry, replacing the fixed
+    30-day-only default. Takes precedence over a raw expires_at if both are given."""
 
 
 class UpdateUrlRequest(BaseModel):
@@ -25,6 +28,7 @@ class UrlResponse(BaseModel):
     status: str
     click_count: int = 0
     last_accessed_at: datetime | None = None
+    disabled_at: datetime | None = None
 
 
 class ClickEventResponse(BaseModel):

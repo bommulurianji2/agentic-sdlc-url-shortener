@@ -39,14 +39,21 @@ def create(
     return short_url
 
 
-def update_status(db: Session, short_url: ShortUrl, new_status: str) -> ShortUrl | None:
+def update_status(
+    db: Session, short_url: ShortUrl, new_status: str, *, now: datetime
+) -> ShortUrl | None:
     """Optimistic-concurrency status update (NFR-09 concurrency-safety, applied here to
     status/version rather than the click counter, which uses record_click's atomic UPDATE).
-    Returns None on a version conflict - the caller maps that to WORKFLOW_CONFLICT."""
+    Returns None on a version conflict - the caller maps that to WORKFLOW_CONFLICT.
+
+    Brownfield addition: disabled_at is stamped when transitioning to 'disabled'
+    and cleared on reactivation - the disabled_at column itself is additive/
+    nullable, so this is fully backward compatible with rows that predate it."""
+    disabled_at = now if new_status == "disabled" else None
     result = db.execute(
         update(ShortUrl)
         .where(ShortUrl.id == short_url.id, ShortUrl.version == short_url.version)
-        .values(status=new_status, version=ShortUrl.version + 1)
+        .values(status=new_status, version=ShortUrl.version + 1, disabled_at=disabled_at)
     )
     db.commit()
     if result.rowcount == 0:  # type: ignore[attr-defined]

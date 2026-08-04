@@ -27,6 +27,10 @@ class ShortUrl(Base):
     last_accessed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     creating_workflow_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    disabled_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    """Brownfield addition (SCEN-02): additive, nullable column - existing rows
+    get NULL, so this migration is fully backward compatible. Set when status
+    transitions to 'disabled', cleared on reactivation."""
 
     click_events: Mapped[list["ClickEvent"]] = relationship(
         back_populates="short_url", cascade="all, delete-orphan"

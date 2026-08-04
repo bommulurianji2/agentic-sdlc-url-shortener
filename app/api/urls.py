@@ -1,5 +1,3 @@
-import datetime as dt
-
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
@@ -15,6 +13,7 @@ from app.schemas.url import (
     UpdateUrlRequest,
     UrlResponse,
 )
+from app.services.expiry import compute_expiry
 from app.services.url_safety import (
     generate_short_code,
     validate_custom_alias,
@@ -36,6 +35,7 @@ def _to_response(short_url: ShortUrl, request: Request) -> UrlResponse:
         status=short_url.status,
         click_count=short_url.click_count,
         last_accessed_at=short_url.last_accessed_at,
+        disabled_at=short_url.disabled_at,
     )
 
 
@@ -56,9 +56,13 @@ def create_short_url(
             code = generate_short_code(settings.short_code_length)
 
     now = utc_now()
-    expires_at = payload.expires_at.replace(tzinfo=None) if payload.expires_at else None
-    if expires_at is None:
-        expires_at = now + dt.timedelta(days=settings.default_expiry_days)
+    raw_expires_at = payload.expires_at.replace(tzinfo=None) if payload.expires_at else None
+    expires_at = compute_expiry(
+        now=now,
+        default_days=settings.default_expiry_days,
+        expires_at=raw_expires_at,
+        expires_in_days=payload.expires_in_days,
+    )
 
     short_url = url_repository.create(
         db,
@@ -112,7 +116,7 @@ def update_url_status(
     short_url = url_repository.get_by_code(db, short_code)
     if short_url is None:
         raise unknown_short_code()
-    updated = url_repository.update_status(db, short_url, payload.status)
+    updated = url_repository.update_status(db, short_url, payload.status, now=utc_now())
     if updated is None:
         raise workflow_conflict()
     return _to_response(updated, request)
