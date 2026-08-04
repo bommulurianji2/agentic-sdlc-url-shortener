@@ -47,6 +47,14 @@ Health endpoint: http://localhost:8000/health
 OpenAPI:         http://localhost:8000/openapi.json
 ```
 
+## Live demo UI
+
+```
+http://localhost:8000/demo
+```
+
+A side-by-side reviewer view: the left panel is the real application (create/redirect/analytics/disable, using the exact endpoints above); the right panel has two tabs — **Request Pipeline** (the real deterministic steps your last action on the left just took) and **Agentic Governance** (pick a scenario, click Run, and watch the actual orchestrator graph advance node by node in real time, with live Approve/Reject buttons at each gate). Not part of the versioned `/api/v1/...` surface — see [ADR-013](docs/decisions/ADR-013-interactive-demo-ui.md) for why this exists alongside, not instead of, the CLI-only approval flow.
+
 ## Running the tests
 
 ```bash
@@ -54,7 +62,7 @@ docker compose exec api pytest -v
 docker compose exec api pytest --cov=app --cov=agentic --cov-report=term-missing
 ```
 
-117 tests, 96% coverage (target was 80%). See [`docs/testing/traceability-matrix.md`](docs/testing/traceability-matrix.md) for what each requirement ID is verified by.
+125 tests, 96% coverage (target was 80%). See [`docs/testing/traceability-matrix.md`](docs/testing/traceability-matrix.md) for what each requirement ID is verified by.
 
 ## Running the scenarios
 

@@ -14,7 +14,7 @@ CLOUD_METADATA_HOSTS = {
     "fd00:ec2::254",  # AWS IMDSv2 IPv6
 }
 
-RESERVED_ALIASES = {"api", "health", "docs", "redoc", "openapi.json"}
+RESERVED_ALIASES = {"api", "health", "docs", "redoc", "openapi.json", "demo"}
 ALIAS_PATTERN = re.compile(r"^[A-Za-z0-9_-]{3,32}$")
 
 

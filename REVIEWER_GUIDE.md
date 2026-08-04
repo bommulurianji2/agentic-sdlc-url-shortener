@@ -17,6 +17,7 @@ Watch the logs for three Alembic migrations applying, then `Uvicorn running on h
 - Swagger UI: http://localhost:8000/docs
 - Health: http://localhost:8000/health → `{"status":"ok","database":"connected","execution_mode":"deterministic","version":"1.0.0"}`
 - OpenAPI: http://localhost:8000/openapi.json
+- **Live demo UI**: http://localhost:8000/demo — the fastest way to see everything below in one place; skip ahead to "Live demo UI" if you want the guided version before doing this manually.
 
 ## API test sequence (via Swagger, or curl)
 
@@ -90,6 +91,22 @@ docker compose exec api python scripts/run_greenfield.py --auto-approve-demo --i
 ```
 
 Expected: the Security Review agent reports a critical finding and the workflow goes **straight** to `SAFE_STOPPED` — zero retries spent (ADR-007's corrected fail-path).
+
+## Live demo UI
+
+Everything above, in one browser tab, side by side:
+
+```
+http://localhost:8000/demo
+```
+
+**Left panel** — the real application. Create a link (full form: URL, custom alias, expiry), see it appear in the list, click **Visit** to actually redirect, **Analytics** to see the recorded click, **Disable**/**Enable** to toggle it. Every action calls the exact same endpoints as the API test sequence above — nothing new on that side.
+
+**Right panel**, two tabs:
+- **Request Pipeline** (default) — the real steps your last left-panel action just took through the actual application code, revealed as they complete. Deliberately *not* labeled as agents, because it isn't agents — it's the deterministic code path, made visible.
+- **Agentic Governance** — pick a scenario, tick the failure-injection checkboxes if you want, click **Run new scenario**, and watch the real orchestrator graph advance live: each stage lights up as it completes, a pending gate shows **Approve**/**Reject** buttons right there, and a `SAFE_STOPPED` or `COMPLETED` outcome renders as a banner with the real reason from the event log. You can also paste in a workflow ID from a CLI-started run (e.g. one you resumed manually above) to watch it the same way.
+
+This is not a separate visualization layer — clicking **Run**/**Approve** in the browser launches the exact same `scripts/run_<scenario>.py` you'd run by hand (see [ADR-013](docs/decisions/ADR-013-interactive-demo-ui.md)), so anything true of the CLI flow is true here too, including the ~15-30 second wait while the real test suite executes after approving Gate 2.
 
 Either way, check `agentic.state.can_release()` would return `False` for that run — a `SAFE_STOPPED` workflow can never be tagged/released.
 

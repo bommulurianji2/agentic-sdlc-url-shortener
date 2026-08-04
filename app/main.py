@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from app.api import health, redirect, urls
+from app.api import demo, health, redirect, urls
 from app.api.middleware.rate_limit import RateLimitMiddleware
 from app.config import get_settings
 from app.errors import AppError, error_envelope
@@ -50,7 +50,9 @@ async def handle_unexpected_error(request: Request, exc: Exception) -> JSONRespo
 
 
 # Order matters: specific routers must be registered before the redirect
-# catch-all, or /health, /api/... would be swallowed as if they were short codes.
+# catch-all, or /health, /api/..., /demo would be swallowed as if they were
+# short codes.
 app.include_router(health.router)
 app.include_router(urls.router)
+app.include_router(demo.router)
 app.include_router(redirect.router)

@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Agentic SDLC URL Shortener — Live Demo</title>
+<style>
+  :root {
+    --bg: #f6f7fa; --surface: #ffffff; --surface-alt: #edf0f6; --border: #d8dce4;
+    --text: #1c2029; --text-muted: #656d7a; --accent: #3d5af1; --accent-soft: #e8ecfd;
+    --code-bg: #eef0f5;
+    --success: #1f8a5f; --success-soft: #e3f5ec;
+    --warning: #9a6b08; --warning-soft: #fdf3de;
+    --critical: #b3261e; --critical-soft: #fbe9e7;
+    --console-bg: #12141c; --console-surface: #181c27; --console-border: #2a2f3d;
+    --console-text: #e5e8f0; --console-muted: #8a91a3;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #10121a; --surface: #181b26; --surface-alt: #1f2333; --border: #2b2f3d;
+      --text: #e7e9f0; --text-muted: #9098ab; --accent: #8b9bff; --accent-soft: #23274a;
+      --code-bg: #1f2333;
+      --success: #4ade80; --success-soft: #16281f;
+      --warning: #fbbf24; --warning-soft: #2c2413;
+      --critical: #f87171; --critical-soft: #2c1a1a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.5;
+  }
+  header.topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.9rem 1.5rem; border-bottom: 1px solid var(--border); background: var(--surface);
+  }
+  header.topbar h1 { font-size: 1.05rem; font-weight: 700; margin: 0; }
+  header.topbar .eyebrow {
+    font-family: "Cascadia Code", "JetBrains Mono", "SF Mono", Consolas, monospace;
+    font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent);
+  }
+  #health-pill { font-size: 0.72rem; font-family: "Cascadia Code", monospace; }
+
+  .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 0; min-height: calc(100vh - 58px); }
+  @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
+
+  .pane { padding: 1.4rem; display: flex; flex-direction: column; gap: 1.1rem; overflow-y: auto; }
+  .pane.left { border-right: 1px solid var(--border); }
+  .pane.right { background: var(--console-bg); color: var(--console-text); }
+
+  .pane-title { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
+  .pane.right .pane-title { color: var(--console-muted); }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.15rem; display: flex; flex-direction: column; gap: 0.7rem; }
+  .pane.right .card { background: var(--console-surface); border-color: var(--console-border); }
+
+  label { font-size: 0.78rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 0.25rem; }
+  .pane.right label { color: var(--console-muted); }
+  input[type=text], input[type=datetime-local], select {
+    width: 100%; padding: 0.5rem 0.6rem; border: 1px solid var(--border); border-radius: 6px;
+    background: var(--surface); color: var(--text); font-size: 0.9rem;
+  }
+  .pane.right input[type=text], .pane.right select {
+    background: var(--console-bg); color: var(--console-text); border-color: var(--console-border);
+  }
+  .field { display: flex; flex-direction: column; }
+  .field-row { display: flex; gap: 0.7rem; }
+  .field-row > .field { flex: 1; }
+
+  button {
+    font: inherit; font-weight: 600; font-size: 0.85rem; padding: 0.55rem 1rem;
+    border-radius: 7px; border: 1px solid var(--accent); background: var(--accent); color: #fff;
+    cursor: pointer;
+  }
+  button.secondary { background: transparent; color: var(--accent); }
+  button.small { padding: 0.32rem 0.65rem; font-size: 0.76rem; }
+  button:disabled { opacity: 0.5; cursor: default; }
+  button.danger { background: var(--critical); border-color: var(--critical); }
+  button.danger.secondary { background: transparent; color: var(--critical); border-color: var(--critical); }
+
+  code, .mono {
+    font-family: "Cascadia Code", "JetBrains Mono", "SF Mono", Consolas, monospace;
+    font-size: 0.85em;
+  }
+  code { background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px; padding: 0.05rem 0.32rem; }
+
+  .pill {
+    display: inline-block; font-size: 0.68rem; font-weight: 700; padding: 0.1rem 0.5rem;
+    border-radius: 100px; font-family: "Cascadia Code", monospace; letter-spacing: 0.02em;
+  }
+  .pill.pending { background: var(--surface-alt); color: var(--text-muted); }
+  .pill.active { background: var(--accent-soft); color: var(--accent); }
+  .pill.done { background: var(--success-soft); color: var(--success); }
+  .pill.failed { background: var(--critical-soft); color: var(--critical); }
+  .pill.waiting { background: var(--warning-soft); color: var(--warning); }
+  .pane.right .pill.pending { background: #1f2333; color: var(--console-muted); }
+
+  .link-row { border: 1px solid var(--border); border-radius: 8px; padding: 0.65rem 0.8rem; display: flex; flex-direction: column; gap: 0.4rem; }
+  .link-row .top { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
+  .link-row .url { color: var(--text-muted); font-size: 0.82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 320px; }
+  .link-row .actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .link-row .detail { font-size: 0.82rem; background: var(--surface-alt); border-radius: 6px; padding: 0.5rem 0.65rem; }
+
+  .step-list { display: flex; flex-direction: column; gap: 0.4rem; }
+  .step {
+    border: 1px solid var(--console-border); background: var(--console-surface);
+    border-radius: 8px; padding: 0.55rem 0.75rem; display: flex; align-items: center;
+    justify-content: space-between; gap: 0.6rem; font-size: 0.85rem;
+  }
+  .step .name { display: flex; align-items: center; gap: 0.5rem; }
+  .step .gate-actions { display: flex; gap: 0.4rem; }
+  .step.parallel-wrap { flex-direction: column; align-items: stretch; gap: 0.4rem; }
+  .step.parallel-wrap .parallel-row { display: flex; gap: 0.5rem; }
+  .step.parallel-wrap .parallel-row > div { flex: 1; display: flex; justify-content: space-between; background: var(--console-bg); border-radius: 6px; padding: 0.4rem 0.6rem; }
+
+  .banner { border-radius: 8px; padding: 0.7rem 0.9rem; font-size: 0.85rem; font-weight: 600; }
+  .banner.done { background: var(--success-soft); color: var(--success); }
+  .banner.stopped { background: var(--critical-soft); color: var(--critical); }
+  .banner.rejected { background: var(--warning-soft); color: var(--warning); }
+
+  .badge-row { display: flex; gap: 0.6rem; font-size: 0.78rem; color: var(--console-muted); }
+
+  details.eventlog { font-size: 0.78rem; }
+  details.eventlog summary { cursor: pointer; color: var(--console-muted); }
+  .eventlog table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+  .eventlog th, .eventlog td { text-align: left; padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--console-border); font-size: 0.74rem; }
+  .eventlog th { color: var(--console-muted); font-weight: 600; }
+
+  .tabs { display: flex; gap: 0.4rem; }
+  .tab-btn {
+    background: transparent; border: 1px solid var(--console-border); color: var(--console-muted);
+    font-size: 0.78rem; padding: 0.4rem 0.85rem;
+  }
+  .tab-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .tab-panel { display: none; flex-direction: column; gap: 0.8rem; }
+  .tab-panel.active { display: flex; }
+
+  .pipeline-hint { font-size: 0.78rem; color: var(--console-muted); }
+  .checkbox-row { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; color: var(--console-muted); }
+  .checkbox-row input { width: auto; }
+
+  .spinner {
+    display: inline-block; width: 0.75rem; height: 0.75rem; border: 2px solid currentColor;
+    border-right-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div>
+    <div class="eyebrow">Reviewer Demo</div>
+    <h1>Agentic SDLC URL Shortener</h1>
+  </div>
+  <div id="health-pill" class="pill pending">checking…</div>
+</header>
+
+<div class="layout">
+
+  <!-- LEFT: application -->
+  <section class="pane left">
+    <div class="pane-title">Try the API — Left Panel</div>
+
+    <div class="card">
+      <strong>Create a short URL</strong>
+      <div class="field">
+        <label for="f-url">Original URL</label>
+        <input id="f-url" type="text" placeholder="https://example.com/some/page" />
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="f-alias">Custom alias (optional)</label>
+          <input id="f-alias" type="text" placeholder="my-link" />
+        </div>
+        <div class="field">
+          <label for="f-expires">Expires at (optional)</label>
+          <input id="f-expires" type="datetime-local" />
+        </div>
+      </div>
+      <div>
+        <button id="btn-create">Shorten</button>
+        <span id="create-error" style="color:var(--critical); font-size:0.8rem;"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <strong>Links created this session</strong>
+      <div id="link-list" style="display:flex; flex-direction:column; gap:0.6rem;">
+        <span style="color:var(--text-muted); font-size:0.85rem;">Nothing yet — create one above.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- RIGHT: system activity -->
+  <section class="pane right">
+    <div class="pane-title">System Activity — Right Panel</div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="pipeline">Request Pipeline</button>
+      <button class="tab-btn" data-tab="governance">Agentic Governance</button>
+    </div>
+
+    <!-- Tab A -->
+    <div class="tab-panel active" id="tab-pipeline">
+      <p class="pipeline-hint">
+        Real steps your last action on the left just took, through the actual
+        deterministic application code — not agents. Agents appear in the
+        <strong>Agentic Governance</strong> tab, where they actually run.
+      </p>
+      <div class="card">
+        <div id="pipeline-steps" class="step-list">
+          <span class="pipeline-hint">Take an action on the left to see its request pipeline here.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab B -->
+    <div class="tab-panel" id="tab-governance">
+      <div class="card">
+        <strong>Run a governed scenario</strong>
+        <div class="field">
+          <label for="g-scenario">Scenario</label>
+          <select id="g-scenario">
+            <option value="greenfield">Greenfield</option>
+            <option value="brownfield">Brownfield</option>
+            <option value="ambiguous">Ambiguous requirement</option>
+          </select>
+        </div>
+        <div class="checkbox-row"><input type="checkbox" id="g-inject-fail" /> <label for="g-inject-fail" style="margin:0;">Inject test failure (demonstrates retry → rollback → safe-stop)</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="g-inject-critical" /> <label for="g-inject-critical" style="margin:0;">Inject critical security finding (safe-stop, no retry spent)</label></div>
+        <div>
+          <button id="btn-run-scenario">Run new scenario</button>
+          <span id="run-spinner" style="display:none;"><span class="spinner"></span> running — real agents executing, may take up to 30s…</span>
+        </div>
+        <div class="field-row" style="align-items:flex-end;">
+          <div class="field">
+            <label for="g-load-id">Or load an existing workflow ID</label>
+            <input id="g-load-id" type="text" placeholder="paste a workflow id" />
+          </div>
+          <button class="secondary" id="btn-load-workflow">Load</button>
+        </div>
+      </div>
+
+      <div id="workflow-view" style="display:none;" class="card">
+        <div class="badge-row">
+          <span>Workflow <code id="wf-id"></code></span>
+          <span>Retries: <span id="wf-retries">0/2</span></span>
+          <span>Rollbacks: <span id="wf-rollbacks">0</span></span>
+        </div>
+        <div id="wf-banner"></div>
+        <div id="step-list" class="step-list"></div>
+        <details class="eventlog">
+          <summary>Raw event log (audit trail)</summary>
+          <table id="event-table"><thead><tr><th>Time</th><th>Stage</th><th>Agent</th><th>Type</th><th>Reason</th></tr></thead><tbody></tbody></table>
+        </details>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+const API = "";
+
+// ---------- health ----------
+async function pollHealth() {
+  try {
+    const r = await fetch("/health");
+    const j = await r.json();
+    const pill = document.getElementById("health-pill");
+    pill.textContent = j.status === "ok" ? "● healthy" : "● degraded";
+    pill.className = "pill " + (j.status === "ok" ? "done" : "failed");
+  } catch (e) {
+    document.getElementById("health-pill").textContent = "● unreachable";
+  }
+}
+pollHealth();
+setInterval(pollHealth, 8000);
+
+// ---------- tabs ----------
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+  });
+});
+
+// ---------- left panel: application ----------
+const links = [];
+
+function renderLinks() {
+  const container = document.getElementById("link-list");
+  if (links.length === 0) {
+    container.innerHTML = '<span style="color:var(--text-muted); font-size:0.85rem;">Nothing yet — create one above.</span>';
+    return;
+  }
+  container.innerHTML = "";
+  links.forEach(link => {
+    const row = document.createElement("div");
+    row.className = "link-row";
+    row.innerHTML = `
+      <div class="top">
+        <strong>${link.short_code}</strong>
+        <span class="pill ${link.status === 'active' ? 'done' : 'failed'}">${link.status}</span>
+      </div>
+      <div class="url" title="${link.original_url}">${link.original_url}</div>
+      <div class="actions">
+        <button class="small secondary" onclick="visitLink('${link.short_code}')">Visit</button>
+        <button class="small secondary" onclick="loadAnalytics('${link.short_code}')">Analytics</button>
+        <button class="small ${link.status === 'active' ? 'danger secondary' : 'secondary'}" onclick="toggleStatus('${link.short_code}', '${link.status}')">
+          ${link.status === 'active' ? 'Disable' : 'Enable'}
+        </button>
+      </div>
+      <div class="detail" id="detail-${link.short_code}" style="display:none;"></div>
+    `;
+    container.appendChild(row);
+  });
+}
+
+function pipelineReveal(steps) {
+  const el = document.getElementById("pipeline-steps");
+  el.innerHTML = "";
+  steps.forEach((label, i) => {
+    setTimeout(() => {
+      const row = document.createElement("div");
+      row.className = "step";
+      row.innerHTML = `<span class="name">✓ ${label}</span>`;
+      el.appendChild(row);
+    }, i * 160);
+  });
+}
+
+document.getElementById("btn-create").addEventListener("click", async () => {
+  const original_url = document.getElementById("f-url").value.trim();
+  const custom_alias = document.getElementById("f-alias").value.trim();
+  const expires_at = document.getElementById("f-expires").value;
+  const errEl = document.getElementById("create-error");
+  errEl.textContent = "";
+  if (!original_url) { errEl.textContent = "Enter a URL first."; return; }
+
+  const body = { original_url };
+  if (custom_alias) body.custom_alias = custom_alias;
+  if (expires_at) body.expires_at = new Date(expires_at).toISOString();
+
+  const r = await fetch("/api/v1/urls", {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body)
+  });
+  const j = await r.json();
+  if (!r.ok) {
+    errEl.textContent = (j.error && j.error.message) || "Request failed.";
+    pipelineReveal(["URL Safety Service — validation failed", `Rejected: ${j.error ? j.error.code : r.status}`]);
+    return;
+  }
+  links.unshift(j);
+  renderLinks();
+  document.getElementById("f-url").value = "";
+  document.getElementById("f-alias").value = "";
+  document.getElementById("f-expires").value = "";
+  pipelineReveal([
+    "URL Safety Service — scheme + SSRF check passed",
+    custom_alias ? "Custom alias validated" : "Secure short code generated",
+    "Repository — row inserted into short_urls",
+    "201 Created returned to client",
+  ]);
+});
+
+async function visitLink(code) {
+  const r = await fetch(`/${code}`, { redirect: "manual" });
+  const detail = document.getElementById(`detail-${code}`);
+  detail.style.display = "block";
+  if (r.status === 0 || r.type === "opaqueredirect") {
+    detail.innerHTML = `Resolved: <strong>307 redirect</strong> — <a href="/${code}" target="_blank">open it</a>`;
+    pipelineReveal(["Repository — lookup succeeded", "Link is active", "Analytics Service — click categorized", "Repository — atomic click increment", "307 redirect issued"]);
+  } else {
+    let body = {};
+    try { body = await r.json(); } catch (e) {}
+    detail.innerHTML = `<strong>${r.status}</strong> ${body.error ? body.error.code : ""}`;
+    pipelineReveal(["Repository — lookup succeeded", `Rejected: ${body.error ? body.error.code : r.status}`]);
+  }
+  refreshLinkRow(code);
+}
+
+async function loadAnalytics(code) {
+  const r = await fetch(`/api/v1/urls/${code}/analytics`);
+  const j = await r.json();
+  const detail = document.getElementById(`detail-${code}`);
+  detail.style.display = "block";
+  const rows = j.click_events.map(e => `${e.accessed_at} — ${e.referrer_domain || "(none)"} / ${e.user_agent_category || "(none)"}`).join("<br/>");
+  detail.innerHTML = `<strong>${j.total_clicks} total clicks</strong><br/>${rows || "<em>no clicks yet</em>"}`;
+  pipelineReveal(["Repository — fetched short_urls row", "Repository — fetched click_events", "200 OK returned with analytics"]);
+}
+
+async function toggleStatus(code, currentStatus) {
+  const newStatus = currentStatus === "active" ? "disabled" : "active";
+  const r = await fetch(`/api/v1/urls/${code}`, {
+    method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: newStatus })
+  });
+  const j = await r.json();
+  if (r.ok) {
+    const link = links.find(l => l.short_code === code);
+    if (link) link.status = j.status;
+    renderLinks();
+    pipelineReveal(["Repository — status updated (optimistic concurrency check)", `Now ${newStatus}`]);
+  }
+}
+
+async function refreshLinkRow(code) {
+  const r = await fetch(`/api/v1/urls/${code}`);
+  if (!r.ok) return;
+  const j = await r.json();
+  const link = links.find(l => l.short_code === code);
+  if (link) Object.assign(link, j);
+  renderLinks();
+}
+
+// ---------- right panel: agentic governance ----------
+const GATE_LABELS = { requirements: "Gate 1 · Requirements", architecture: "Gate 2 · Architecture", release: "Gate 3 · Release" };
+const GATE_BY_STATUS = {
+  WAITING_FOR_REQUIREMENT_APPROVAL: "requirements",
+  WAITING_FOR_ARCHITECTURE_APPROVAL: "architecture",
+  WAITING_FOR_RELEASE_APPROVAL: "release",
+};
+let currentWorkflow = null;
+
+function setRunning(isRunning) {
+  document.getElementById("btn-run-scenario").disabled = isRunning;
+  document.getElementById("btn-load-workflow").disabled = isRunning;
+  document.getElementById("run-spinner").style.display = isRunning ? "inline" : "none";
+}
+
+document.getElementById("btn-run-scenario").addEventListener("click", async () => {
+  setRunning(true);
+  const body = {
+    scenario_type: document.getElementById("g-scenario").value,
+    inject_failure: document.getElementById("g-inject-fail").checked ? "test_execution" : null,
+    inject_permanent_failure: document.getElementById("g-inject-critical").checked,
+  };
+  try {
+    const r = await fetch("/demo/api/workflows/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const j = await r.json();
+    if (!r.ok) { alert(j.detail || "Failed to start scenario."); return; }
+    currentWorkflow = j;
+    renderWorkflow(j);
+  } finally { setRunning(false); }
+});
+
+document.getElementById("btn-load-workflow").addEventListener("click", async () => {
+  const id = document.getElementById("g-load-id").value.trim();
+  if (!id) return;
+  const r = await fetch(`/demo/api/workflows/${id}`);
+  if (!r.ok) { alert("No such workflow."); return; }
+  currentWorkflow = await r.json();
+  renderWorkflow(currentWorkflow);
+});
+
+async function approveGate(gate, decision) {
+  if (!currentWorkflow) return;
+  setRunning(true);
+  const body = {
+    gate, decision,
+    inject_failure: document.getElementById("g-inject-fail").checked ? "test_execution" : null,
+    inject_permanent_failure: document.getElementById("g-inject-critical").checked,
+  };
+  try {
+    const r = await fetch(`/demo/api/workflows/${currentWorkflow.workflow_id}/approve`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body)
+    });
+    currentWorkflow = await r.json();
+    renderWorkflow(currentWorkflow);
+  } finally { setRunning(false); }
+}
+
+const STEP_ORDER = [
+  { key: "REQUIREMENT_ANALYSIS", label: "Requirement Analysis" },
+  { key: "GATE_1", label: "Gate 1 · Requirements", gate: "requirements" },
+  { key: "TASK_DECOMPOSITION", label: "Task Decomposition (Planning)" },
+  { key: "ARCHITECTURE_DESIGN", label: "Architecture Design" },
+  { key: "GATE_2", label: "Gate 2 · Architecture", gate: "architecture" },
+  { key: "PARALLEL", label: "Implementation + Test Design (parallel)" },
+  { key: "TEST_EXECUTION", label: "Test Execution" },
+  { key: "SECURITY_REVIEW", label: "Security Review" },
+  { key: "DOCUMENTATION", label: "Documentation & Release Readiness" },
+  { key: "GATE_3", label: "Gate 3 · Release", gate: "release" },
+];
+
+// Maps a graph stage (agentic/graph.py) to its position in STEP_ORDER.
+// Approvals are recorded in a separate `approvals` table, not as a
+// WorkflowEvent - so "has this gate passed" can't be read off the event
+// log directly. Instead: everything before wf.current_stage's index is
+// done, the gate/step at that index reflects wf.status, everything after
+// is pending. SAFE_STOPPED is special-cased to point at whichever stage
+// actually failed (from the event log), not at SAFE_STOP itself.
+const STAGE_INDEX = {
+  REQUIREMENT_ANALYSIS: 0, REQUIREMENT_VALIDATION: 0,
+  HUMAN_GATE_REQUIREMENTS: 1,
+  TASK_DECOMPOSITION: 2,
+  ARCHITECTURE_DESIGN: 3, ARCHITECTURE_VALIDATION: 3,
+  HUMAN_GATE_ARCHITECTURE: 4,
+  IMPLEMENTATION: 5, TEST_DESIGN: 5, JOIN: 5,
+  TEST_EXECUTION: 6,
+  SECURITY_REVIEW: 7, RETRY_EVALUATION: 7, ROLLBACK: 7,
+  DOCUMENTATION: 8, RELEASE_READINESS: 8,
+  HUMAN_GATE_RELEASE: 9,
+};
+
+function currentIndexFor(wf) {
+  if (wf.status === "COMPLETED") return 10;
+  if (wf.status === "SAFE_STOPPED") {
+    const failEvent = [...wf.events].reverse().find(
+      e => e.event_type === "stage_failure" || e.event_type === "rollback"
+    );
+    return STAGE_INDEX[failEvent ? failEvent.stage : wf.current_stage] ?? 6;
+  }
+  return STAGE_INDEX[wf.current_stage] ?? 0;
+}
+
+function renderWorkflow(wf) {
+  document.getElementById("workflow-view").style.display = "flex";
+  document.getElementById("wf-id").textContent = wf.workflow_id;
+  document.getElementById("wf-retries").textContent = `${wf.retry_count}/2`;
+  document.getElementById("wf-rollbacks").textContent = wf.rollback_count;
+
+  const currentIndex = currentIndexFor(wf);
+  const failedIndex = wf.status === "SAFE_STOPPED" ? currentIndex : -1;
+
+  const banner = document.getElementById("wf-banner");
+  banner.innerHTML = "";
+  if (wf.status === "COMPLETED") {
+    banner.innerHTML = `<div class="banner done">✓ COMPLETED — release-ready evidence written.</div>`;
+  } else if (wf.status === "SAFE_STOPPED") {
+    const last = [...wf.events].reverse().find(e => e.reason);
+    banner.innerHTML = `<div class="banner stopped">⛔ SAFE_STOPPED — ${last ? last.reason : "see event log"}. This run can never be released.</div>`;
+  } else if (wf.status === "REJECTED") {
+    banner.innerHTML = `<div class="banner rejected">✗ REJECTED at a gate.</div>`;
+  }
+
+  const list = document.getElementById("step-list");
+  list.innerHTML = "";
+  STEP_ORDER.forEach((step, i) => {
+    let status;
+    if (step.gate && GATE_BY_STATUS[wf.status] === step.gate) {
+      status = "waiting";
+    } else if (i === failedIndex) {
+      status = "failed";
+    } else if (i < currentIndex) {
+      status = "done";
+    } else if (i === currentIndex && wf.status !== "SAFE_STOPPED" && wf.status !== "REJECTED") {
+      status = wf.status === "COMPLETED" ? "done" : "active";
+    } else {
+      status = "pending";
+    }
+    const pillClass = { pending: "pending", active: "active", done: "done", waiting: "waiting", failed: "failed" }[status];
+    const row = document.createElement("div");
+    row.className = "step";
+    const gateButtons = (step.gate && status === "waiting")
+      ? `<div class="gate-actions">
+           <button class="small" onclick="approveGate('${step.gate}','approved')">Approve</button>
+           <button class="small danger" onclick="approveGate('${step.gate}','rejected')">Reject</button>
+         </div>`
+      : "";
+    row.innerHTML = `<span class="name">${step.label}</span><span style="display:flex; gap:0.5rem; align-items:center;"><span class="pill ${pillClass}">${status}</span>${gateButtons}</span>`;
+    list.appendChild(row);
+  });
+
+  const tbody = document.querySelector("#event-table tbody");
+  tbody.innerHTML = "";
+  wf.events.forEach(e => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${e.timestamp.split("T")[1]?.slice(0,8) || e.timestamp}</td><td>${e.stage}</td><td>${e.agent || "-"}</td><td>${e.event_type}</td><td>${e.reason || e.decision || ""}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+</script>
+
+</body>
+</html>
